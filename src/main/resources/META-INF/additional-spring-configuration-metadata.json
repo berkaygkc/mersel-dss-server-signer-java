@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "hsm.library",
+      "type": "java.lang.String",
+      "description": "HSM library file path"
+    }
+  ]
+}
