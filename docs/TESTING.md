@@ -295,6 +295,77 @@ void longRunningTest() {
 }
 ```
 
+## 🔌 Postman ile API Testi
+
+API'yi manuel olarak test etmek için Postman kullanabilirsiniz. OpenAPI spesifikasyonunu Postman'e aktararak tüm endpoint'leri hazır koleksiyon olarak kullanabilirsiniz.
+
+### OpenAPI'yi Postman'e Aktarma
+
+**Yöntem 1: URL ile (Önerilen)**
+
+1. Uygulamayı başlatın: `mvn spring-boot:run`
+2. Postman'de **Import** butonuna tıklayın
+3. **Link** sekmesine geçin
+4. URL'yi girin: `http://localhost:8085/api-docs`
+5. **Continue** ve **Import** butonlarına tıklayın
+
+**Yöntem 2: Dosya ile**
+
+```bash
+# OpenAPI JSON dosyasını indirin
+curl http://localhost:8085/api-docs -o sign-api-openapi.json
+
+# Postman'de Import → File → sign-api-openapi.json
+```
+
+### Postman Koleksiyonu Kullanımı
+
+Import işleminden sonra:
+
+1. **Environment Variables** oluşturun:
+   - `baseUrl`: `http://localhost:8085`
+   - `port`: `8085`
+
+2. **Örnek İstekler**:
+   - ✅ XAdES İmzalama (`POST /v1/xadessign`)
+   - ✅ PAdES İmzalama (`POST /v1/padessign`)
+   - ✅ WS-Security İmzalama (`POST /v1/wssecuritysign`)
+   - ✅ Timestamp İşlemleri (`POST /api/timestamp/*`)
+   - ✅ Health Check (`GET /actuator/health`)
+
+3. **Dosya Upload**: Form-data tipinde `document` parametresine dosya ekleyin
+
+### Test Senaryoları
+
+**e-Fatura İmzalama:**
+```
+POST {{baseUrl}}/v1/xadessign
+Content-Type: multipart/form-data
+
+document: [efatura.xml dosyası]
+documentType: UblDocument
+```
+
+**PDF İmzalama:**
+```
+POST {{baseUrl}}/v1/padessign
+Content-Type: multipart/form-data
+
+document: [belge.pdf dosyası]
+appendMode: false
+```
+
+**Timestamp Alma:**
+```
+POST {{baseUrl}}/api/timestamp/get
+Content-Type: multipart/form-data
+
+document: [document.pdf dosyası]
+hashAlgorithm: SHA256
+```
+
+> 💡 **İpucu:** Postman Collection Runner ile toplu test senaryoları çalıştırabilirsiniz.
+
 ## 📚 Test Kaynakları
 
 ### Test Verileri

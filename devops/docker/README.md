@@ -61,7 +61,6 @@ docker-compose --env-file .env.production up -d
 ## 🌐 Endpoint'ler
 
 - **Sign API:** http://localhost:8085
-- **Swagger UI:** http://localhost:8085/swagger/index.html
 - **Health Check:** http://localhost:8085/actuator/health
 - **Prometheus:** http://localhost:9090
 - **Grafana:** http://localhost:3000 (admin/admin)

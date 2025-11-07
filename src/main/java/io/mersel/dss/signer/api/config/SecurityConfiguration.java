@@ -36,7 +36,7 @@ public class SecurityConfiguration implements WebMvcConfigurer {
      */
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addRedirectViewController("/", "/swagger/index.html");
+        registry.addRedirectViewController("/", "/index.html");
     }
 
     /**

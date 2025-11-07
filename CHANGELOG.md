@@ -9,6 +9,15 @@ ve bu proje [Semantic Versioning](https://semver.org/spec/v2.0.0.html) kullanmak
 
 ### Added
 
+- 🎨 **Scalar API Documentation** - Modern ve kullanıcı dostu API dokümantasyon arayüzü
+  - Swagger UI yerine Scalar kullanımı
+  - Dark mode ve modern tasarım
+  - Daha iyi UX ve navigasyon
+  - Interactive API playground
+  - Otomatik kod örnekleri (cURL, JavaScript, Python, Java, Go, PHP, Ruby, C#)
+  - Mobile uyumlu responsive tasarım
+  - Dokümantasyon: `docs/SCALAR.md`
+
 - ⏰ **RFC 3161 Zaman Damgası (Timestamp) Servisi** - Binary belgelere zaman damgası ekleme ve doğrulama
   - **Timestamp Alma Endpoint** (`POST /api/timestamp/get`)
     - Herhangi bir binary dosya için RFC 3161 uyumlu timestamp

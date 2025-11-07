@@ -213,7 +213,7 @@ ab -n 100 -c 10 -p efatura.xml -T "multipart/form-data" \
   http://localhost:8085/v1/xadessign
 
 # wrk ile
-wrk -t4 -c100 -d30s http://localhost:8085/swagger/index.html
+wrk -t4 -c100 -d30s http://localhost:8085/index.html
 ```
 
 ## 🐛 Hata Ayıklama
@@ -264,7 +264,7 @@ tail -f logs/signature.log
 
 ## 📚 Ek Kaynaklar
 
-- [API Dokümantasyonu](http://localhost:8085/swagger/index.html)
+- [API Dokümantasyonu](http://localhost:8085/index.html)
 - [Sertifika Seçimi Rehberi](../docs/CERTIFICATE_SELECTION.md)
 - [DSS Override Dokümantasyonu](../DSS_OVERRIDE.md)
 - [Güvenlik Politikası](../SECURITY.md)

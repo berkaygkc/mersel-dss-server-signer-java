@@ -82,8 +82,16 @@ mvn spring-boot:run
 ```
 
 ✅ API başladı: http://localhost:8085  
-✅ Swagger UI: http://localhost:8085/swagger/index.html  
+✅ API Documentation (Scalar): http://localhost:8085/  
+✅ OpenAPI JSON: http://localhost:8085/api-docs  
 ✅ Health Check: http://localhost:8085/actuator/health
+
+> 💡 **Postman ile Kullanım:** OpenAPI JSON'ı Postman'e aktararak tüm endpoint'leri hazır koleksiyon olarak kullanabilirsiniz!
+> ```bash
+> # JSON'ı indir
+> curl http://localhost:8085/api-docs -o sign-api-openapi.json
+> ```
+> Ardından Postman'de: **Import → File → sign-api-openapi.json**
 
 ### 5. İlk İmzanızı Oluşturun
 
@@ -205,8 +213,8 @@ curl http://localhost:8085/actuator/health
 # Port kontrolü
 lsof -i :8085
 
-# Swagger UI
-curl http://localhost:8085/swagger/index.html
+# API Documentation (Scalar)
+curl http://localhost:8085/
 ```
 
 ### "CERTIFICATE_PIN bulunamadı"

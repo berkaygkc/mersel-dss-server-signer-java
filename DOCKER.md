@@ -226,7 +226,7 @@ Container başladıktan sonra:
 | Service | URL | Açıklama |
 |---------|-----|----------|
 | **Sign API** | http://localhost:8085 | API Base |
-| **Swagger UI** | http://localhost:8085/swagger/index.html | API Dokümantasyonu |
+| **Swagger UI** | http://localhost:8085/index.html | API Dokümantasyonu |
 | **Health Check** | http://localhost:8085/actuator/health | Sağlık Kontrolü |
 | **Prometheus** | http://localhost:9090 | Metrics & Queries |
 | **Grafana** | http://localhost:3000 | Dashboards (admin/admin) |

@@ -96,9 +96,10 @@
             <version>2.15.3</version>
         </dependency>
 
+        <!-- SpringDoc OpenAPI Core (without Swagger UI) -->
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-ui</artifactId>
+            <artifactId>springdoc-openapi-webmvc-core</artifactId>
             <version>1.7.0</version>
         </dependency>
 

@@ -202,7 +202,7 @@ openssl pkcs12 -info -in resources/test-certs/testkurum2_ec384@test.com.tr_82509
 | Endpoint | Açıklama |
 |----------|----------|
 | `http://localhost:8085` | API Base URL |
-| `http://localhost:8085/swagger/index.html` | Swagger UI (API Dokümantasyonu) |
+| `http://localhost:8085/index.html` | Swagger UI (API Dokümantasyonu) |
 | `http://localhost:8085/actuator/health` | Health Check (Sağlık Kontrolü) |
 | `http://localhost:8085/actuator/info` | Application Info (Uygulama Bilgisi) |
 | `http://localhost:8085/actuator/prometheus` | Prometheus Metrics (Monitoring) |
@@ -366,7 +366,7 @@ ls -lh signed-kurum*.xml
 
 ```bash
 # API'nin çalıştığını doğrula
-curl http://localhost:8085/swagger/index.html
+curl http://localhost:8085/index.html
 
 # Port'un dinlendiğini doğrula
 lsof -i :8085

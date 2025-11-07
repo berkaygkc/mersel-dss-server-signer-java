@@ -61,7 +61,9 @@ Türkiye e-imza standartlarına uygun elektronik imza (XAdES, PAdES, WS-Security
 - Eşzamanlı imzalama kontrolü (semaphore)
 - Kapsamlı hata yönetimi
 - Profesyonel loglama (SLF4J)
-- OpenAPI 3.0 dokümantasyonu
+- Modern API dokümantasyonu (Scalar - OpenAPI 3.0)
+- Interactive API playground
+- Otomatik kod örnekleri (8+ dil)
 
 ## Hızlı Başlangıç
 
@@ -156,10 +158,17 @@ API `http://localhost:8085` adresinde erişilebilir olacaktır.
 ### API Endpoint'leri
 
 **Dokümantasyon ve Monitoring:**
-- Swagger UI: http://localhost:8085/swagger/index.html
+- API Documentation (Scalar): http://localhost:8085/
+- OpenAPI JSON: http://localhost:8085/api-docs
 - Health Check: http://localhost:8085/actuator/health
 - Application Info: http://localhost:8085/actuator/info
 - Prometheus Metrics: http://localhost:8085/actuator/prometheus
+
+> 💡 **Postman Kullanıcıları için:** OpenAPI JSON dosyasını indirip Postman'e aktarabilirsiniz:
+> 1. Uygulamayı başlatın
+> 2. `http://localhost:8085/api-docs` adresinden JSON dosyasını indirin
+> 3. Postman'de **Import → Link** veya **Import → File** seçeneği ile aktarın
+> 4. Tüm endpoint'ler otomatik olarak hazır koleksiyon olarak gelecektir!
 
 **İmzalama Endpoint'leri:**
 - XAdES Signature: `POST /v1/xadessign`
@@ -417,8 +426,9 @@ Performans optimizasyonu ve production ayarları için [docs/PERFORMANCE.md](doc
 - 🧪 [Test Sertifikaları](TEST_CERTIFICATES.md) - Hazır test sertifikaları ile hızlı başlangıç
 
 
-### 📊 Monitoring
+### 📊 Monitoring & Documentation
 
+- 🎨 [Scalar API Documentation](docs/SCALAR.md) - Modern API dokümantasyon arayüzü
 - 🔍 [Actuator Endpoints](docs/ACTUATOR_ENDPOINTS.md) - Health check ve metrics
 - 📊 [Monitoring](docs/MONITORING.md) - Prometheus & Grafana (Dashboard: **11378**)
 - ⚡ [Performans Optimizasyonu](docs/PERFORMANCE.md) - Production ayarları ve tuning

@@ -66,4 +66,4 @@ BASE_URL="http://your-server:8080"
 
 - [Timestamp Dokümantasyonu](../../docs/TIMESTAMP.md)
 - [API Dokümantasyonu](../../README.md)
-- [Swagger UI](http://localhost:8080/swagger/index.html)
+- [Swagger UI](http://localhost:8080/index.html)
