@@ -1,3 +1,5 @@
+// @formatter:off
+
 /**
  * DSS - Digital Signature Services
  * Copyright (C) 2015 European Commission, provided under the CEF programme
@@ -610,6 +612,11 @@ public abstract class XAdESSignatureBuilder extends XAdESBuilder implements Sign
         }
     }
 
+    /**
+     * EC tabanlı sertifikalar için KeyInfo altına dsig11:ECKeyValue bloğunu ekler.
+     * Public key'i sıkıştırılmamış noktaya çevirerek Base64 yazar ve eğri OID'sini
+     * varsa NamedCurve olarak ekler (TÜBİTAK XAdES gereksinimleri).
+     */
     private void addECKeyValue(Element keyInfoElement, CertificateToken signingCertificate) {
         // <ds:KeyValue>
         final String xmldsigUri = getXmldsigNamespace().getUri();
@@ -1732,6 +1739,11 @@ public abstract class XAdESSignatureBuilder extends XAdESBuilder implements Sign
 
         final EncryptionAlgorithm encryptionAlgorithm = params.getEncryptionAlgorithm();
         final byte[] signatureValueBytes;
+        // ########################OVERRIDE_DSS#########################
+        // ##### ECDSA imzalarında TÜBİTAK doğrulayıcısının beklediği #
+        // ##### DER dışı formatı korumak için ASN.1 dönüştürmesi      #
+        // ##### atlanır. DSS varsayılanı bu imzalarda hata yaratır.   #
+        // #############################################################
         if (EncryptionAlgorithm.ECDSA.isEquivalent(encryptionAlgorithm)) {
             signatureValueBytes = signatureValue;
         } else {

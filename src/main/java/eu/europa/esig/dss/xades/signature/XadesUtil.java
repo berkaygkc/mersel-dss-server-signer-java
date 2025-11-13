@@ -1,3 +1,5 @@
+// @formatter:off
+
 package eu.europa.esig.dss.xades.signature;
 
 import java.io.IOException;
@@ -228,6 +230,13 @@ public class XadesUtil {
     }
 
 
+    /**
+     * EC public key değerini ANSI X9.62'de tanımlanan "uncompressed" formatta
+     * (0x04 || X || Y) bayt dizisine dönüştürür ve Base64 olarak kodlar.
+     *
+     * @param pub Elliptic Curve public key
+     * @return Base64 olarak kodlanmış, sıkıştırılmamış EC noktası
+     */
     public static String ecPublicKeyToUncompressedPointBase64(ECPublicKey pub) {
         ECPoint w = pub.getW();
         BigInteger x = w.getAffineX();
@@ -247,6 +256,14 @@ public class XadesUtil {
         return java.util.Base64.getEncoder().encodeToString(out);
     }
 
+    /**
+     * BigInteger kaynaklı uzunluk sapmalarını gidererek tam olarak belirtilen
+     * uzunlukta bir bayt dizisi üretir. İmza koordinatları için gereklidir.
+     *
+     * @param src Kaynak bayt dizisi
+     * @param len Hedef uzunluk
+     * @return len uzunluğunda normalize edilmiş bayt dizisi
+     */
     private static byte[] toFixedLength(byte[] src, int len) {
         // src may contain leading zero due to BigInteger sign bit; normalize to exactly len bytes
         if (src.length == len) return src;
@@ -262,6 +279,14 @@ public class XadesUtil {
         return Arrays.copyOfRange(src, src.length - len, src.length);
     }
 
+    /**
+     * EC public key içinden NamedCurve OID değerini bulur. Standart DER
+     * kodlamasında ikinci OBJECT IDENTIFIER olarak yer aldığı varsayılır; bulunamazsa
+     * alan boyutuna göre bilinen eğri OID'leri döner.
+     *
+     * @param publicKey EC public key
+     * @return Eğriye ait OID veya bilinmiyorsa null
+     */
     public static String extractNamedCurveOID(ECPublicKey publicKey) {
         try {
             byte[] encoded = publicKey.getEncoded();
@@ -293,6 +318,12 @@ public class XadesUtil {
         return null;
     }
 
+    /**
+     * DER kodlu OBJECT IDENTIFIER baytlarını metin formuna dönüştürür.
+     *
+     * @param bytes OID içeriğini temsil eden bayt dizisi
+     * @return Nokta ile ayrılmış OID string'i
+     */
     private static String decodeOID(byte[] bytes) {
         StringBuilder oid = new StringBuilder();
         int first = bytes[0] & 0xFF;
