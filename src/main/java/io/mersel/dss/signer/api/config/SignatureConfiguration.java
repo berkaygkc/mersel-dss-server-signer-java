@@ -205,5 +205,6 @@ public class SignatureConfiguration {
     public eu.europa.esig.dss.xades.signature.XAdESService xadesService(CertificateVerifier certificateVerifier) {
         return new eu.europa.esig.dss.xades.signature.XAdESService(certificateVerifier);
     }
+
 }
 
