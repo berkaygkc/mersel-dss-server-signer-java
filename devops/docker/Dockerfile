@@ -32,10 +32,16 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
+    pcscd \
+    #    pcsc-tools \ 
     && rm -rf /var/lib/apt/lists/*
 
+ARG USER_ID=1001
+ARG GROUP_ID=1001
+
 # Create app user (security best practice)
-RUN groupadd -r signapi && useradd -r -g signapi signapi
+RUN groupadd -g ${GROUP_ID} signapi && \
+    useradd -u ${USER_ID} -g signapi -m signapi
 
 # Create directories
 RUN mkdir -p /app/logs /app/certs /app/config && \
@@ -58,14 +64,13 @@ EXPOSE 8085
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8085/actuator/health || exit 1
+    CMD curl -f http://localhost:8085/actuator/health || exit 1
 
 # Environment variables with defaults
 ENV SERVER_PORT=8085 \
     LOG_PATH=/app/logs \
-    JAVA_OPTS="-Xmx512m -Xms256m" \
+    JAVA_OPTS="-Xmx2048m -Xms1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:ParallelGCThreads=2" \
     SPRING_PROFILES_ACTIVE=production
 
 # Run application
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app/app.jar"]
-
