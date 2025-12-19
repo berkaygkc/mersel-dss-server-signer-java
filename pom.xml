@@ -39,6 +39,12 @@
             <artifactId>dss-cades</artifactId>
             <version>6.3</version>
         </dependency>
+        <!-- DSS CMS implementation for CAdES level extension -->
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-cms-object</artifactId>
+            <version>6.3</version>
+        </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>

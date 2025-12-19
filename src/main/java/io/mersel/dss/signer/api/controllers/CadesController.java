@@ -2,6 +2,7 @@ package io.mersel.dss.signer.api.controllers;
 
 import java.util.UUID;
 
+import io.mersel.dss.signer.api.enums.TimestampType;
 import io.mersel.dss.signer.api.models.SigningMaterial;
 import io.mersel.dss.signer.api.services.signature.cades.CAdESSignatureService;
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ import io.mersel.dss.signer.api.models.SignResponse;
 
 /**
  * CAdES (CMS İleri Seviye Elektronik İmza) işlemleri için REST controller.
- * Text/plain formatında string veri alır ve zaman damgalı CAdES imzası oluşturur.
+ * Farklı CAdES seviyelerini destekler: CAdES-B, CAdES-T, CAdES-A.
  */
 @RestController
 @CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
@@ -48,8 +49,15 @@ public class CadesController {
 
     @Operation(
         summary = "Metin içeriğini CAdES imzası ile imzalar",
-        description = "Text/plain formatında gelen string veriyi zaman damgalı CAdES-BASELINE-T " +
-                      "veya CAdES-BASELINE-B imzası ile imzalar. Çıktı PKCS#7/CMS formatındadır (.p7s)"
+        description = "Text/plain formatında gelen string veriyi belirtilen zaman damgası türü ile imzalar.\n\n" +
+                      "**Zaman Damgası Türleri:**\n" +
+                      "- `none`: Zaman damgası yok (CAdES-B)\n" +
+                      "- `signature`: İmza zaman damgası (CAdES-T) - varsayılan\n" +
+                      "- `content`: İçerik zaman damgası\n" +
+                      "- `archive`: Arşiv zaman damgası (CAdES-A)\n" +
+                      "- `esc`: ESC zaman damgası\n" +
+                      "- `all`: Hem imza hem arşiv zaman damgası\n\n" +
+                      "Çıktı PKCS#7/CMS formatındadır (.p7s)"
     )
     @PostMapping(value = "/v1/cadessign", 
         consumes = {MediaType.TEXT_PLAIN_VALUE, MediaType.APPLICATION_JSON_VALUE},
@@ -67,8 +75,8 @@ public class CadesController {
     public ResponseEntity<?> signCadesFromPlainText(
             @Parameter(description = "İmzalanacak metin içeriği")
             @RequestBody String content,
-            @Parameter(description = "Zaman damgası eklensin mi (varsayılan: true)")
-            @RequestParam(value = "includeTimestamp", defaultValue = "true") Boolean includeTimestamp,
+            @Parameter(description = "Zaman damgası türü: none, signature, content, archive, esc, all (varsayılan: signature)")
+            @RequestParam(value = "timestampType", defaultValue = "signature") String timestampTypeStr,
             @Parameter(description = "İmza ID'si (opsiyonel)")
             @RequestParam(value = "signatureId", required = false) String signatureId) {
         
@@ -79,21 +87,23 @@ public class CadesController {
                     .body(new ErrorModel("INVALID_INPUT", "İçerik zorunludur"));
             }
 
-            boolean useTimestamp = includeTimestamp == null || includeTimestamp;
+            TimestampType timestampType = TimestampType.fromValue(timestampTypeStr);
 
             SignResponse result = cadesSignatureService.signContent(
                 content,
-                useTimestamp,
+                timestampType,
                 signatureId,
                 signingMaterial
             );
 
-            LOGGER.info("CAdES imzası başarıyla oluşturuldu. Zaman damgalı: {}", useTimestamp);
+            LOGGER.info("CAdES imzası başarıyla oluşturuldu. Zaman damgası türü: {}", 
+                timestampType.getDescription());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment", 
                 "signed-" + UUID.randomUUID() + ".p7s");
+            headers.set("x-timestamp-type", timestampType.getValue());
             
             if (result.getSignatureValue() != null) {
                 headers.set("x-signature-value", result.getSignatureValue());
@@ -110,7 +120,7 @@ public class CadesController {
 
     @Operation(
         summary = "JSON DTO ile metin içeriğini CAdES imzası ile imzalar",
-        description = "JSON formatında gelen DTO'yu kullanarak zaman damgalı CAdES imzası oluşturur"
+        description = "JSON formatında gelen DTO'yu kullanarak belirtilen zaman damgası türü ile CAdES imzası oluşturur"
     )
     @PostMapping(value = "/v1/cadessign/json",
         consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -133,22 +143,23 @@ public class CadesController {
                     .body(new ErrorModel("INVALID_INPUT", "İçerik zorunludur"));
             }
 
-            boolean useTimestamp = dto.getIncludeTimestamp() == null || dto.getIncludeTimestamp();
+            TimestampType timestampType = TimestampType.fromValue(dto.getEffectiveTimestampType());
 
             SignResponse result = cadesSignatureService.signContent(
                 dto.getContent(),
-                useTimestamp,
+                timestampType,
                 dto.getSignatureId(),
                 signingMaterial
             );
 
-            LOGGER.info("CAdES imzası (JSON endpoint) başarıyla oluşturuldu. Zaman damgalı: {}", 
-                useTimestamp);
+            LOGGER.info("CAdES imzası (JSON endpoint) başarıyla oluşturuldu. Zaman damgası türü: {}", 
+                timestampType.getDescription());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment", 
                 "signed-" + UUID.randomUUID() + ".p7s");
+            headers.set("x-timestamp-type", timestampType.getValue());
             
             if (result.getSignatureValue() != null) {
                 headers.set("x-signature-value", result.getSignatureValue());
