@@ -18,34 +18,31 @@ services:
     environment:
       # Server Configuration
       - SERVER_PORT=8085
-      
+
       # Certificate Configuration
-      - PFX_PATH=${PFX_PATH:-/app/certs/certificate.pfx}
+      - PKCS11_LIBRARY=${PKCS11_LIBRARY:-/usr/lib/akis/libakisp11.so}
+      - PKCS11_SLOT_LIST_INDEX=${PKCS11_SLOT_LIST_INDEX_1:-0}
       - CERTIFICATE_PIN=${CERTIFICATE_PIN:-changeme}
-      - CERTIFICATE_ALIAS=${CERTIFICATE_ALIAS:-1}
-      
+
       # Timestamp Configuration (optional)
       - IS_TUBITAK_TSP=${IS_TUBITAK_TSP:-false}
       - TS_SERVER_HOST=${TS_SERVER_HOST:-http://zd.kamusm.gov.tr}
       - TS_USER_ID=${TS_USER_ID:-}
       - TS_USER_PASSWORD=${TS_USER_PASSWORD:-}
-      
+
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_PATH=/app/logs
-      
+
       # JVM Options
       - JAVA_OPTS=-Xmx1g -Xms512m -XX:+UseG1GC
     volumes:
-      # Mount test certificates (development) - RSA and EC384 test certs
-      - ../../resources/test-certs:/app/certs:ro
-      # For production: mount your actual certificates directory
-      # - /path/to/production/certs:/app/certs:ro
-      # Mount logs (optional)
-      - ../../logs:/app/logs
+      - ../../resources/akis/:/usr/lib/akis:ro
+      - /var/run/pcscd/pcscd.comm:/var/run/pcscd/pcscd.comm
     networks:
       - monitoring
-    restart: unless-stopped
+    devices:
+      - "/dev/bus/usb/:/dev/bus/usb/"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
       interval: 30s
@@ -75,7 +72,7 @@ services:
     depends_on:
       - sign-api
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -102,7 +99,7 @@ services:
     depends_on:
       - prometheus
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -125,7 +122,7 @@ services:
     profiles:
       - monitoring-full
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -138,4 +135,5 @@ volumes:
   prometheus-data:
   grafana-data:
   alertmanager-data:
+
 
