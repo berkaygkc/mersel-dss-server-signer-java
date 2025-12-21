@@ -15,7 +15,7 @@ import javax.xml.crypto.dom.DOMStructure;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
-import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
+import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -85,12 +85,14 @@ public class WsSecuritySignatureService {
                     .getElementsByTagNameNS(soapNamespace, "Body").item(0);
 
             if (bodyElement != null) {
-                // Plain Id attribute kullan (PR #8 yaklaşımı)
-                bodyElement.setAttribute("Id", BODY_ID);
-                // ID attribute'unu XML parser'a bildir
-                bodyElement.setIdAttribute("Id", true);
+                // Mevcut Id attribute'larını temizle
+                bodyElement.removeAttribute("Id");
+                bodyElement.removeAttributeNS(XmlConstants.NS_WSU, "Id");
                 bodyElement.removeAttribute("xmlns:xsi");
                 bodyElement.removeAttribute("xmlns:xsd");
+                // wsu:Id kullan (mimsoft yaklaşımı)
+                bodyElement.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", BODY_ID);
+                bodyElement.setIdAttributeNS(XmlConstants.NS_WSU, "Id", true);
             }
 
             // BinarySecurityToken ekle
@@ -278,31 +280,38 @@ public class WsSecuritySignatureService {
 
             DigestMethod digestMethod = sigFactory.newDigestMethod(DigestMethod.SHA256, null);
 
-            // Basit EXCLUSIVE C14N transform (parametresiz - PR #8 yaklaşımı)
-            Transform excTransform = sigFactory.newTransform(
+            // Body için transform: parametresiz (mimsoft)
+            Transform bodyTransform = sigFactory.newTransform(
                     CanonicalizationMethod.EXCLUSIVE,
                     (TransformParameterSpec) null);
 
-            // Referanslar: Timestamp + Body
+            // Timestamp için transform: wsse soap prefix'leri dahil (mimsoft)
+            ExcC14NParameterSpec tsExcSpec = new ExcC14NParameterSpec(Arrays.asList("wsse", "soap"));
+            Transform tsTransform = sigFactory.newTransform(
+                    CanonicalizationMethod.EXCLUSIVE,
+                    tsExcSpec);
+
+            // Referanslar: Body + Timestamp (mimsoft sıralaması)
             List<Reference> refs = new ArrayList<>();
-            refs.add(sigFactory.newReference(
-                    "#" + TS_ID,
-                    digestMethod,
-                    Collections.singletonList(excTransform),
-                    null,
-                    null));
             refs.add(sigFactory.newReference(
                     "#" + BODY_ID,
                     digestMethod,
-                    Collections.singletonList(excTransform),
+                    Collections.singletonList(bodyTransform),
+                    null,
+                    null));
+            refs.add(sigFactory.newReference(
+                    "#" + TS_ID,
+                    digestMethod,
+                    Collections.singletonList(tsTransform),
                     null,
                     null));
 
-            // SignedInfo: EXCLUSIVE C14N parametresiz
+            // SignedInfo: EXCLUSIVE C14N with soap prefix (mimsoft)
+            ExcC14NParameterSpec c14nSpec = new ExcC14NParameterSpec(Collections.singletonList("soap"));
             SignedInfo signedInfo = sigFactory.newSignedInfo(
                     sigFactory.newCanonicalizationMethod(
                             CanonicalizationMethod.EXCLUSIVE,
-                            (C14NMethodParameterSpec) null),
+                            c14nSpec),
                     sigFactory.newSignatureMethod(
                             "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
                             null),
@@ -325,6 +334,7 @@ public class WsSecuritySignatureService {
 
             DOMSignContext signContext = new DOMSignContext(privateKey, securityElement);
             signContext.putNamespacePrefix(XMLSignature.XMLNS, "ds");
+            signContext.putNamespacePrefix("http://www.w3.org/2001/10/xml-exc-c14n#", "ec");
 
             signature.sign(signContext);
 
