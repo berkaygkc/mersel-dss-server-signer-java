@@ -79,10 +79,10 @@ public class WsSecuritySignatureService {
                     .getElementsByTagNameNS(soapNamespace, "Body").item(0);
 
             if (bodyElement != null) {
-                bodyElement.setAttribute("Id", "SignedSoapBodyContent");
+                // wsu:Id namespace'i ile ID attribute'u ekle (WS-Security standardı)
+                bodyElement.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", BODY_ID);
                 // ID attribute'unu XML parser'a bildir
-                bodyElement.setIdAttribute("Id", true);
-                bodyElement.removeAttribute("wsu:Id");
+                bodyElement.setIdAttributeNS(XmlConstants.NS_WSU, "Id", true);
                 bodyElement.removeAttribute("xmlns:xsi");
                 bodyElement.removeAttribute("xmlns:xsd");
             }
@@ -92,8 +92,8 @@ public class WsSecuritySignatureService {
                     soapDocument, soapNamespace, material);
 
             // DEBUG: ID'lerin eklendiğini doğrula
-            Element testTimestamp = findElementById(soapDocument, "SignedSoapTimestampContent");
-            Element testBody = findElementById(soapDocument, "SignedSoapBodyContent");
+            Element testTimestamp = findElementById(soapDocument, TS_ID);
+            Element testBody = findElementById(soapDocument, BODY_ID);
             LOGGER.debug("Pre-signature validation - Timestamp found: {}, Body found: {}",
                     testTimestamp != null, testBody != null);
             if (testTimestamp == null) {
@@ -188,9 +188,10 @@ public class WsSecuritySignatureService {
     private void addTimestamp(Document document, Element securityElement) throws Exception {
         // Timestamp elemanını manuel oluştur
         Element timestampElement = document.createElementNS(XmlConstants.NS_WSU, "wsu:Timestamp");
-        timestampElement.setAttribute("Id", "SignedSoapTimestampContent");
+        // wsu:Id namespace'i ile ID attribute'u ekle (WS-Security standardı)
+        timestampElement.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", TS_ID);
         // ID attribute'unu XML parser'a bildir
-        timestampElement.setIdAttribute("Id", true);
+        timestampElement.setIdAttributeNS(XmlConstants.NS_WSU, "Id", true);
 
         // Created zamanı
         Element createdElement = document.createElementNS(XmlConstants.NS_WSU, "wsu:Created");
@@ -387,7 +388,7 @@ public class WsSecuritySignatureService {
     private byte[] documentToBytes(Document document) throws Exception {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
