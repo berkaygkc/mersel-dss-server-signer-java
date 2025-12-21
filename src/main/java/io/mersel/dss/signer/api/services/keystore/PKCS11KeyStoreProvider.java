@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Security;
-import java.util.StringJoiner;
 
 /**
  * PKCS#11 donanım güvenlik modülleri (HSM) için KeyStore sağlayıcısı.
@@ -23,11 +22,9 @@ public class PKCS11KeyStoreProvider implements KeyStoreProvider {
     private final String libraryPath;
     private final Long slotIndex;
     private final String providerName;
-    private final Long slot;
 
-    public PKCS11KeyStoreProvider(String libraryPath, Long slot, Long slotIndex) {
+    public PKCS11KeyStoreProvider(String libraryPath, Long slotIndex) {
         this.libraryPath = libraryPath;
-        this.slot = slot;
         this.slotIndex = slotIndex;
         this.providerName = "PKCS11Provider_" + System.identityHashCode(this);
     }
@@ -53,17 +50,15 @@ public class PKCS11KeyStoreProvider implements KeyStoreProvider {
     }
 
     private Provider buildPKCS11Provider() {
-        StringJoiner configJoiner = new StringJoiner(System.lineSeparator());
-        configJoiner.add("name = "+providerName);
-        configJoiner.add("library = "+"\""+libraryPath+"\"");
-
+        StringBuilder config = new StringBuilder();
+        config.append("name = ").append(providerName).append('\n');
+        config.append("library = \"").append(libraryPath).append("\"\n");
+        
         if (slotIndex != null && slotIndex >= 0) {
-            configJoiner.add("slotListIndex = "+ slotIndex);
-        }else if(slot != null && slot>= 0){
-            configJoiner.add("slot = "+slot);
+            config.append("slotListIndex = ").append(slotIndex).append('\n');
         }
         
-        byte[] configBytes = configJoiner.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] configBytes = config.toString().getBytes(StandardCharsets.UTF_8);
         SunPKCS11 provider = new SunPKCS11(new ByteArrayInputStream(configBytes));
         Security.addProvider(provider);
         

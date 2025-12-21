@@ -5,7 +5,6 @@ import io.mersel.dss.signer.api.services.CertificateInfoService;
 import io.mersel.dss.signer.api.services.keystore.KeyStoreProvider;
 import io.mersel.dss.signer.api.services.keystore.PKCS11KeyStoreProvider;
 import io.mersel.dss.signer.api.services.keystore.PfxKeyStoreProvider;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -73,7 +72,6 @@ public class SignatureApplication {
         try {
             // Environment variable'lardan yapılandırmayı oku
             String pkcs11Library = System.getenv("PKCS11_LIBRARY");
-            String pkcs11SlotListIndexStr = System.getenv("PKCS11_SLOT_LIST_INDEX");
             String pkcs11SlotStr = System.getenv("PKCS11_SLOT");
             String pfxPath = System.getenv("PFX_PATH");
             String pin = System.getenv("CERTIFICATE_PIN");
@@ -89,16 +87,16 @@ public class SignatureApplication {
             KeyStoreProvider provider;
             
             if (pkcs11Library != null && !pkcs11Library.isEmpty()) {
-                long slot = NumberUtils.isDigits(pkcs11SlotStr) ? Long.parseLong(pkcs11SlotStr):-1L;
-                long slotIndex = NumberUtils.isDigits(pkcs11SlotListIndexStr) ? Long.parseLong(pkcs11SlotListIndexStr):-1L;
-
+                Long slot = (pkcs11SlotStr != null && !pkcs11SlotStr.isEmpty()) 
+                    ? Long.parseLong(pkcs11SlotStr) 
+                    : 0L;
+                
                 System.out.println("📦 Keystore Type: PKCS#11");
                 System.out.println("📂 Library: " + pkcs11Library);
                 System.out.println("🎰 Slot: " + slot);
-                System.out.println("🎰 Slot List Index: " + slotIndex);
                 System.out.println();
                 
-                provider = new PKCS11KeyStoreProvider(pkcs11Library, slot,slotIndex);
+                provider = new PKCS11KeyStoreProvider(pkcs11Library, slot);
                 
             } else if (pfxPath != null && !pfxPath.isEmpty()) {
                 System.out.println("📦 Keystore Type: PFX/PKCS12");

@@ -34,9 +34,37 @@ public class XAdESDocumentPlacementService {
         // Belge tipine göre hedef konumu belirle
         Node target = resolveTargetNode(document, documentType);
 
+        // Hedef node'daki placeholder elemanlarını kaldır (mimsoft uyumluluğu)
+        removePlaceholderElements(target);
+
         // İmzayı import et ve ekle
         Node importedSignature = document.importNode(signatureElement, true);
         target.appendChild(importedSignature);
+    }
+
+    /**
+     * Hedef node içindeki placeholder elemanlarını kaldırır.
+     * MIMSOFT_SIGNATURE_PLACEHOLDER gibi placeholder'lar imza eklenmeden önce temizlenir.
+     */
+    private void removePlaceholderElements(Node target) {
+        if (target == null) {
+            return;
+        }
+
+        NodeList children = target.getChildNodes();
+        for (int i = children.getLength() - 1; i >= 0; i--) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                String localName = child.getLocalName();
+                String nodeName = child.getNodeName();
+                // MIMSOFT_SIGNATURE_PLACEHOLDER veya benzeri placeholder'ları kaldır
+                if ("MIMSOFT_SIGNATURE_PLACEHOLDER".equals(localName) ||
+                    "MIMSOFT_SIGNATURE_PLACEHOLDER".equals(nodeName) ||
+                    (nodeName != null && nodeName.contains("PLACEHOLDER"))) {
+                    target.removeChild(child);
+                }
+            }
+        }
     }
 
     /**

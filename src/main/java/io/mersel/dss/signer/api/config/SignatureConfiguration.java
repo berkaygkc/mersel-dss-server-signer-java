@@ -55,8 +55,7 @@ public class SignatureConfiguration {
         if (StringUtils.hasText(config.getPkcs11LibraryPath())) {
             return new PKCS11KeyStoreProvider(
                 config.getPkcs11LibraryPath(),
-                config.getPkcs11Slot(),
-                config.getPkcs11SlotIndex()
+                config.getPkcs11Slot()
             );
         }
         
