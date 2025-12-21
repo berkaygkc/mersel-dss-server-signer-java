@@ -317,8 +317,14 @@ public class WsSecuritySignatureService {
                             null),
                     refs);
 
+            // Benzersiz ID'ler oluştur (mimsoft uyumlu)
+            String sigId = "SIG-" + java.util.UUID.randomUUID().toString();
+            String kiId = "KI-" + java.util.UUID.randomUUID().toString();
+            String strId = "STR-" + java.util.UUID.randomUUID().toString();
+
             // KeyInfo -> SecurityTokenReference (X509v3)
             Element str = document.createElementNS(NS_WSSE, "wsse:SecurityTokenReference");
+            str.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", strId);
 
             Element ref = document.createElementNS(NS_WSSE, "wsse:Reference");
             ref.setAttribute("URI", "#" + bstReference);
@@ -327,10 +333,10 @@ public class WsSecuritySignatureService {
                     "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3");
             str.appendChild(ref);
             List<XMLStructure> kiContent = Arrays.asList(new DOMStructure(str));
-            KeyInfo keyInfo = sigFactory.getKeyInfoFactory().newKeyInfo(kiContent);
+            KeyInfo keyInfo = sigFactory.getKeyInfoFactory().newKeyInfo(kiContent, kiId);
 
             PrivateKey privateKey = material.getPrivateKey();
-            XMLSignature signature = sigFactory.newXMLSignature(signedInfo, keyInfo);
+            XMLSignature signature = sigFactory.newXMLSignature(signedInfo, keyInfo, null, sigId, null);
 
             DOMSignContext signContext = new DOMSignContext(privateKey, securityElement);
             signContext.putNamespacePrefix(XMLSignature.XMLNS, "ds");
