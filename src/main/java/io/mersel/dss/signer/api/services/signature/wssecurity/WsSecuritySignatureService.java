@@ -40,6 +40,12 @@ public class WsSecuritySignatureService {
     private static final String NS_WSSE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
     private final Semaphore semaphore;
 
+    static {
+        // Base64 line break'lerini devre dışı bırak (SignatureValue için)
+        System.setProperty("com.sun.org.apache.xml.internal.security.ignoreLineBreaks", "true");
+        System.setProperty("org.apache.xml.security.ignoreLineBreaks", "true");
+    }
+
     public WsSecuritySignatureService(Semaphore signatureSemaphore) {
         this.semaphore = signatureSemaphore;
     }
@@ -265,7 +271,6 @@ public class WsSecuritySignatureService {
 
         semaphore.acquire();
         try {
-
             XMLSignatureFactory sigFactory = XMLSignatureFactory.getInstance("DOM");
 
             DigestMethod digestMethod = sigFactory.newDigestMethod(DigestMethod.SHA256, null);
