@@ -332,6 +332,8 @@ public class WsSecuritySignatureService {
 
             DOMSignContext signContext = new DOMSignContext(privateKey, securityElement);
             signContext.putNamespacePrefix(XMLSignature.XMLNS, "ds");
+            // exc-c14n namespace için ec: prefix'i kullan (mimsoft uyumlu)
+            signContext.putNamespacePrefix("http://www.w3.org/2001/10/xml-exc-c14n#", "ec");
 
             signature.sign(signContext);
 
