@@ -112,6 +112,9 @@ public class WsSecuritySignatureService {
             // İmzayı oluştur
             signDocument(soapDocument, securityElement, material, alias, pin, bstReference);
 
+            // Eleman sırasını düzelt: BST -> Signature -> Timestamp (mimsoft ile uyumlu)
+            reorderSecurityElements(securityElement);
+
             // Byte'lara dönüştür
             byte[] signedBytes = documentToBytes(soapDocument);
 
@@ -392,6 +395,48 @@ public class WsSecuritySignatureService {
         }
 
         return null;
+    }
+
+    /**
+     * Security header içindeki elemanları doğru sıraya koyar.
+     * Sıra: BinarySecurityToken -> Signature -> Timestamp (mimsoft uyumlu)
+     */
+    private void reorderSecurityElements(Element securityElement) {
+        Element bst = null;
+        Element signature = null;
+        Element timestamp = null;
+
+        // Child elemanları bul
+        org.w3c.dom.NodeList children = securityElement.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            org.w3c.dom.Node node = children.item(i);
+            if (node instanceof Element) {
+                Element elem = (Element) node;
+                String localName = elem.getLocalName();
+                if ("BinarySecurityToken".equals(localName)) {
+                    bst = elem;
+                } else if ("Signature".equals(localName)) {
+                    signature = elem;
+                } else if ("Timestamp".equals(localName)) {
+                    timestamp = elem;
+                }
+            }
+        }
+
+        // Elemanları yeniden sırala: BST -> Signature -> Timestamp
+        if (bst != null && signature != null && timestamp != null) {
+            // Önce hepsini kaldır
+            securityElement.removeChild(bst);
+            securityElement.removeChild(signature);
+            securityElement.removeChild(timestamp);
+
+            // Doğru sırayla ekle
+            securityElement.appendChild(bst);
+            securityElement.appendChild(signature);
+            securityElement.appendChild(timestamp);
+
+            LOGGER.debug("Security elemanları yeniden sıralandı: BST -> Signature -> Timestamp");
+        }
     }
 
     /**
