@@ -15,7 +15,7 @@ import javax.xml.crypto.dom.DOMStructure;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
-import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
+import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -85,10 +85,10 @@ public class WsSecuritySignatureService {
                     .getElementsByTagNameNS(soapNamespace, "Body").item(0);
 
             if (bodyElement != null) {
-                // wsu:Id namespace'i ile ID attribute'u ekle (WS-Security standardı)
-                bodyElement.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", BODY_ID);
+                // Plain Id attribute kullan (PR #8 yaklaşımı)
+                bodyElement.setAttribute("Id", BODY_ID);
                 // ID attribute'unu XML parser'a bildir
-                bodyElement.setIdAttributeNS(XmlConstants.NS_WSU, "Id", true);
+                bodyElement.setIdAttribute("Id", true);
                 bodyElement.removeAttribute("xmlns:xsi");
                 bodyElement.removeAttribute("xmlns:xsd");
             }
@@ -278,51 +278,38 @@ public class WsSecuritySignatureService {
 
             DigestMethod digestMethod = sigFactory.newDigestMethod(DigestMethod.SHA256, null);
 
-            // Timestamp için transform: wsse ve soap prefix'lerini dahil et
-            ExcC14NParameterSpec tsExcSpec = new ExcC14NParameterSpec(Arrays.asList("wsse", "soap"));
-            Transform tsTransform = sigFactory.newTransform(
-                    CanonicalizationMethod.EXCLUSIVE,
-                    tsExcSpec);
-
-            // Body için transform: parametresiz
-            Transform bodyTransform = sigFactory.newTransform(
+            // Basit EXCLUSIVE C14N transform (parametresiz - PR #8 yaklaşımı)
+            Transform excTransform = sigFactory.newTransform(
                     CanonicalizationMethod.EXCLUSIVE,
                     (TransformParameterSpec) null);
 
-            // Referanslar: Body + Timestamp (mimsoft sıralaması)
+            // Referanslar: Timestamp + Body
             List<Reference> refs = new ArrayList<>();
-            refs.add(sigFactory.newReference(
-                    "#" + BODY_ID,
-                    digestMethod,
-                    Collections.singletonList(bodyTransform),
-                    null,
-                    null));
             refs.add(sigFactory.newReference(
                     "#" + TS_ID,
                     digestMethod,
-                    Collections.singletonList(tsTransform),
+                    Collections.singletonList(excTransform),
+                    null,
+                    null));
+            refs.add(sigFactory.newReference(
+                    "#" + BODY_ID,
+                    digestMethod,
+                    Collections.singletonList(excTransform),
                     null,
                     null));
 
-            // SignedInfo: EXCLUSIVE C14N with soap prefix
-            ExcC14NParameterSpec c14nSpec = new ExcC14NParameterSpec(Collections.singletonList("soap"));
+            // SignedInfo: EXCLUSIVE C14N parametresiz
             SignedInfo signedInfo = sigFactory.newSignedInfo(
                     sigFactory.newCanonicalizationMethod(
                             CanonicalizationMethod.EXCLUSIVE,
-                            c14nSpec),
+                            (C14NMethodParameterSpec) null),
                     sigFactory.newSignatureMethod(
                             "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
                             null),
                     refs);
 
             // KeyInfo -> SecurityTokenReference (X509v3)
-            // Benzersiz ID'ler oluştur (mimsoft uyumlu)
-            String sigId = "SIG-" + java.util.UUID.randomUUID().toString();
-            String kiId = "KI-" + java.util.UUID.randomUUID().toString();
-            String strId = "STR-" + java.util.UUID.randomUUID().toString();
-
             Element str = document.createElementNS(NS_WSSE, "wsse:SecurityTokenReference");
-            str.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", strId);
 
             Element ref = document.createElementNS(NS_WSSE, "wsse:Reference");
             ref.setAttribute("URI", "#" + bstReference);
@@ -331,15 +318,13 @@ public class WsSecuritySignatureService {
                     "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3");
             str.appendChild(ref);
             List<XMLStructure> kiContent = Arrays.asList(new DOMStructure(str));
-            KeyInfo keyInfo = sigFactory.getKeyInfoFactory().newKeyInfo(kiContent, kiId);
+            KeyInfo keyInfo = sigFactory.getKeyInfoFactory().newKeyInfo(kiContent);
 
             PrivateKey privateKey = material.getPrivateKey();
-            XMLSignature signature = sigFactory.newXMLSignature(signedInfo, keyInfo, null, sigId, null);
+            XMLSignature signature = sigFactory.newXMLSignature(signedInfo, keyInfo);
 
             DOMSignContext signContext = new DOMSignContext(privateKey, securityElement);
             signContext.putNamespacePrefix(XMLSignature.XMLNS, "ds");
-            // exc-c14n namespace için ec: prefix'i kullan (mimsoft uyumlu)
-            signContext.putNamespacePrefix("http://www.w3.org/2001/10/xml-exc-c14n#", "ec");
 
             signature.sign(signContext);
 
