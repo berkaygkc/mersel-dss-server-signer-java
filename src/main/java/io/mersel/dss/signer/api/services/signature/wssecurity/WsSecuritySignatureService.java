@@ -15,7 +15,7 @@ import javax.xml.crypto.dom.DOMStructure;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
-import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
+import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -270,8 +270,14 @@ public class WsSecuritySignatureService {
 
             DigestMethod digestMethod = sigFactory.newDigestMethod(DigestMethod.SHA256, null);
 
-            // Basit EXCLUSIVE C14N transform'u (parametresiz)
-            Transform excTransform = sigFactory.newTransform(
+            // Timestamp için transform: wsse ve soap prefix'lerini dahil et
+            ExcC14NParameterSpec tsExcSpec = new ExcC14NParameterSpec(Arrays.asList("wsse", "soap"));
+            Transform tsTransform = sigFactory.newTransform(
+                    CanonicalizationMethod.EXCLUSIVE,
+                    tsExcSpec);
+
+            // Body için transform: parametresiz
+            Transform bodyTransform = sigFactory.newTransform(
                     CanonicalizationMethod.EXCLUSIVE,
                     (TransformParameterSpec) null);
 
@@ -280,21 +286,22 @@ public class WsSecuritySignatureService {
             refs.add(sigFactory.newReference(
                     "#" + TS_ID,
                     digestMethod,
-                    Collections.singletonList(excTransform),
+                    Collections.singletonList(tsTransform),
                     null,
                     null));
             refs.add(sigFactory.newReference(
                     "#" + BODY_ID,
                     digestMethod,
-                    Collections.singletonList(excTransform),
+                    Collections.singletonList(bodyTransform),
                     null,
                     null));
 
-            // SignedInfo: yine EXCLUSIVE C14N, paramsiz
+            // SignedInfo: EXCLUSIVE C14N with soap prefix
+            ExcC14NParameterSpec c14nSpec = new ExcC14NParameterSpec(Collections.singletonList("soap"));
             SignedInfo signedInfo = sigFactory.newSignedInfo(
                     sigFactory.newCanonicalizationMethod(
                             CanonicalizationMethod.EXCLUSIVE,
-                            (C14NMethodParameterSpec) null),
+                            c14nSpec),
                     sigFactory.newSignatureMethod(
                             "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
                             null),
