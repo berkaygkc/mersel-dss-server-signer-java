@@ -35,8 +35,6 @@ import java.util.concurrent.Semaphore;
 public class WsSecuritySignatureService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WsSecuritySignatureService.class);
-    private static final String BODY_ID = "SignedSoapBodyContent";
-    private static final String TS_ID = "SignedSoapTimestampContent";
     private static final String NS_WSSE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
     private final Semaphore semaphore;
 
@@ -77,42 +75,50 @@ public class WsSecuritySignatureService {
             // Security header'ı doğru SOAP namespace ile oluştur (mevcut değilse)
             Element securityElement = createSecurityHeader(soapDocument, soapHeaderElement);
 
-            // Zaman damgası ekle
-            addTimestamp(soapDocument, securityElement);
-
-            // Body elemanını hazırla
+            // Body elemanını hazırla ve mevcut wsu:Id'yi al (mimsoft: inputtaki Id korunur)
             Element bodyElement = (Element) soapDocument
                     .getElementsByTagNameNS(soapNamespace, "Body").item(0);
 
+            String bodyId = null;
             if (bodyElement != null) {
-                // Mevcut Id attribute'larını temizle
-                bodyElement.removeAttribute("Id");
-                bodyElement.removeAttributeNS(XmlConstants.NS_WSU, "Id");
+                // Mevcut wsu:Id'yi al (mimsoft yaklaşımı: inputtaki Id korunur)
+                bodyId = bodyElement.getAttributeNS(XmlConstants.NS_WSU, "Id");
+                if (bodyId == null || bodyId.isEmpty()) {
+                    bodyId = bodyElement.getAttribute("wsu:Id");
+                }
+                if (bodyId == null || bodyId.isEmpty()) {
+                    // Yoksa yeni oluştur
+                    bodyId = "Body-Id-" + java.util.UUID.randomUUID().toString().replace("-", "");
+                    bodyElement.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", bodyId);
+                }
+                // ID attribute'unu XML parser'a bildir
+                bodyElement.setIdAttributeNS(XmlConstants.NS_WSU, "Id", true);
                 bodyElement.removeAttribute("xmlns:xsi");
                 bodyElement.removeAttribute("xmlns:xsd");
-                // wsu:Id kullan (mimsoft yaklaşımı)
-                bodyElement.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", BODY_ID);
-                bodyElement.setIdAttributeNS(XmlConstants.NS_WSU, "Id", true);
             }
+
+            // Zaman damgası ekle (TS-{uuid} formatında)
+            String tsId = "TS-" + java.util.UUID.randomUUID().toString();
+            addTimestamp(soapDocument, securityElement, tsId);
 
             // BinarySecurityToken ekle
             String bstReference = addBinarySecurityToken(
                     soapDocument, soapNamespace, material);
 
             // DEBUG: ID'lerin eklendiğini doğrula
-            Element testTimestamp = findElementById(soapDocument, TS_ID);
-            Element testBody = findElementById(soapDocument, BODY_ID);
+            Element testTimestamp = findElementById(soapDocument, tsId);
+            Element testBody = findElementById(soapDocument, bodyId);
             LOGGER.debug("Pre-signature validation - Timestamp found: {}, Body found: {}",
                     testTimestamp != null, testBody != null);
             if (testTimestamp == null) {
-                LOGGER.error("SignedSoapTimestampContent elementi bulunamadı!");
+                LOGGER.error("Timestamp elementi bulunamadı: {}", tsId);
             }
             if (testBody == null) {
-                LOGGER.error("SignedSoapBodyContent elementi bulunamadı!");
+                LOGGER.error("Body elementi bulunamadı: {}", bodyId);
             }
 
             // İmzayı oluştur
-            signDocument(soapDocument, securityElement, material, alias, pin, bstReference);
+            signDocument(soapDocument, securityElement, material, alias, pin, bstReference, bodyId, tsId);
 
             // Eleman sırasını düzelt: BST -> Signature -> Timestamp (mimsoft ile uyumlu)
             reorderSecurityElements(securityElement);
@@ -196,11 +202,11 @@ public class WsSecuritySignatureService {
     /**
      * SOAP security header'ına zaman damgası ekler.
      */
-    private void addTimestamp(Document document, Element securityElement) throws Exception {
+    private void addTimestamp(Document document, Element securityElement, String tsId) throws Exception {
         // Timestamp elemanını manuel oluştur
         Element timestampElement = document.createElementNS(XmlConstants.NS_WSU, "wsu:Timestamp");
         // wsu:Id namespace'i ile ID attribute'u ekle (WS-Security standardı)
-        timestampElement.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", TS_ID);
+        timestampElement.setAttributeNS(XmlConstants.NS_WSU, "wsu:Id", tsId);
         // ID attribute'unu XML parser'a bildir
         timestampElement.setIdAttributeNS(XmlConstants.NS_WSU, "Id", true);
 
@@ -272,7 +278,9 @@ public class WsSecuritySignatureService {
             SigningMaterial material,
             String alias,
             char[] pin,
-            String bstReference) throws Exception {
+            String bstReference,
+            String bodyId,
+            String tsId) throws Exception {
 
         semaphore.acquire();
         try {
@@ -294,13 +302,13 @@ public class WsSecuritySignatureService {
             // Referanslar: Body + Timestamp (mimsoft sıralaması)
             List<Reference> refs = new ArrayList<>();
             refs.add(sigFactory.newReference(
-                    "#" + BODY_ID,
+                    "#" + bodyId,
                     digestMethod,
                     Collections.singletonList(bodyTransform),
                     null,
                     null));
             refs.add(sigFactory.newReference(
-                    "#" + TS_ID,
+                    "#" + tsId,
                     digestMethod,
                     Collections.singletonList(tsTransform),
                     null,
