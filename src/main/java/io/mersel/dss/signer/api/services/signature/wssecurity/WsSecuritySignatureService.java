@@ -289,18 +289,18 @@ public class WsSecuritySignatureService {
                     CanonicalizationMethod.EXCLUSIVE,
                     (TransformParameterSpec) null);
 
-            // Referanslar: Timestamp + Body
+            // Referanslar: Body + Timestamp (mimsoft sıralaması)
             List<Reference> refs = new ArrayList<>();
-            refs.add(sigFactory.newReference(
-                    "#" + TS_ID,
-                    digestMethod,
-                    Collections.singletonList(tsTransform),
-                    null,
-                    null));
             refs.add(sigFactory.newReference(
                     "#" + BODY_ID,
                     digestMethod,
                     Collections.singletonList(bodyTransform),
+                    null,
+                    null));
+            refs.add(sigFactory.newReference(
+                    "#" + TS_ID,
+                    digestMethod,
+                    Collections.singletonList(tsTransform),
                     null,
                     null));
 
