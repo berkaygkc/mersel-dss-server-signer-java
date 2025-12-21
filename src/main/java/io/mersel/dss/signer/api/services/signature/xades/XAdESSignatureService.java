@@ -109,21 +109,29 @@ public class XAdESSignatureService {
                 documentType = DocumentType.OtherXmlDocument;
             }
 
-            // 3. Belgeyi parse et ve parametreleri oluştur
+            // 3. Belgeyi parse et
             Document document = xmlProcessor.parseDocument(xmlBytes);
-            DSSDocument dssDocument = new InMemoryDocument(xmlBytes, DEFAULT_XML_NAME,
+
+            // 4. Placeholder'ları imzalamadan ÖNCE kaldır (hash uyumluluğu için kritik)
+            documentPlacement.removePlaceholderBeforeSigning(document, documentType);
+
+            // 5. Placeholder kaldırılmış belgeyi DSSDocument'a dönüştür
+            byte[] cleanedXmlBytes = xmlProcessor.documentToBytes(document);
+            DSSDocument dssDocument = new InMemoryDocument(cleanedXmlBytes, DEFAULT_XML_NAME,
                     MimeType.fromFileExtension("xml"));
+
+            // 6. Parametreleri oluştur
             XAdESSignatureParameters parameters = parametersBuilder.buildParameters(
                     document, documentType, signatureId, material);
 
-            // 4. İmzalama sertifika zincirini doğrulayıcıya ekle
+            // 7. İmzalama sertifika zincirini doğrulayıcıya ekle
             addSigningCertificateChainToVerifier(material);
 
-            // 5. İmzayı oluştur
+            // 8. İmzayı oluştur
             SignResponse response = createSignature(document, dssDocument, parameters,
                     documentType, material);
 
-            // 6. Gerekirse ZIP'le
+            // 9. Gerekirse ZIP'le
             if (zipped) {
                 byte[] zippedBytes = compressionService.zipBytes(ZIP_ENTRY_NAME, response.getSignedDocument());
                 return new SignResponse(zippedBytes, response.getSignatureValue());

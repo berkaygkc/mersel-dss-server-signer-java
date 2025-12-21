@@ -34,12 +34,21 @@ public class XAdESDocumentPlacementService {
         // Belge tipine göre hedef konumu belirle
         Node target = resolveTargetNode(document, documentType);
 
-        // Hedef node'daki placeholder elemanlarını kaldır (mimsoft uyumluluğu)
-        removePlaceholderElements(target);
-
         // İmzayı import et ve ekle
         Node importedSignature = document.importNode(signatureElement, true);
         target.appendChild(importedSignature);
+    }
+
+    /**
+     * İmzalama öncesi belgeden placeholder elemanlarını kaldırır.
+     * Bu method imzalama öncesi çağrılmalıdır, aksi halde hash uyumsuzluğu oluşur.
+     * 
+     * @param document XML belgesi
+     * @param documentType Belge tipi
+     */
+    public void removePlaceholderBeforeSigning(Document document, DocumentType documentType) {
+        Node target = resolveTargetNode(document, documentType);
+        removePlaceholderElements(target);
     }
 
     /**
